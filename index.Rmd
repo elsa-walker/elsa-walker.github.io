@@ -1,0 +1,157 @@
+Practical Machine Learning
+========================================================
+Prediction Assignment Writeup
+-----------------------------
+
+### Step 1
+Load pml-training.csv and clean it up by dropping columns with missing values.
+Also remove columns that are unrelated to prediction such as user_name and timestamps.
+```{r step1, eval=FALSE, prompt=TRUE}
+pmlTrainingFile <- file("pml-training.csv")
+pmlTrainingData <- read.csv(pmlTrainingFile, na.strings = c("NA",""))
+pmlTrainingData <- pmlTrainingData[, which(as.numeric(colSums(is.na(pmlTrainingData)))==0)]
+pmlTrainingData <- pmlTrainingData[, !names(pmlTrainingData) %in% c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window")]
+```
+
+### Step 2
+Split the data into a training set and a cross-validation set.
+```{r step2, eval=FALSE, prompt=TRUE}
+inTrain <- createDataPartition(y=pmlTrainingData$classe, p=0.75, list=FALSE)
+training <- pmlTrainingData[inTrain,]
+testing <- pmlTrainingData[-inTrain,]
+```
+
+### Step 3
+Do a quick baseline by training a simple decision tree.<br>
+<strong>Result:</strong> 55% accuracy on the cross-validation set.<br>
+Not good enough.  Let's try using a random forest next.
+```{r step3, eval=FALSE, prompt=TRUE}
+modelFit <- train(training$classe ~ ., method="rpart", data=training)
+testPredictions <- predict(modelFit, newdata=testing)
+confusionMatrix(testing$classe, testPredictions)
+```
+```{r step3results, eval=FALSE}
+Confusion Matrix and Statistics
+
+          Reference
+Prediction   A   B   C   D   E
+         A 832 140 293 108  22
+         B 144 547 209  49   0
+         C  21  36 683 115   0
+         D  43 105 427 229   0
+         E   9 212 215  42 423
+
+Overall Statistics
+                                          
+               Accuracy : 0.5534          
+                 95% CI : (0.5394, 0.5674)
+    No Information Rate : 0.3726          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.4406          
+ Mcnemar's Test P-Value : < 2.2e-16       
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            0.7931   0.5260   0.3738   0.4217  0.95056
+Specificity            0.8540   0.8960   0.9441   0.8681  0.89280
+Pos Pred Value         0.5964   0.5764   0.7988   0.2848  0.46948
+Neg Pred Value         0.9382   0.8753   0.7175   0.9234  0.99450
+Prevalence             0.2139   0.2121   0.3726   0.1107  0.09074
+Detection Rate         0.1697   0.1115   0.1393   0.0467  0.08626
+Detection Prevalence   0.2845   0.1935   0.1743   0.1639  0.18373
+Balanced Accuracy      0.8235   0.7110   0.6590   0.6449  0.92168
+```
+
+### Step 4
+Proceed to training with a more sophisticated random forest.
+If it works well, then we're good.  Otherwise we can try boosting next.
+Run this and take a nap.
+```{r step4, eval=FALSE, prompt=TRUE}
+modelFit <- train(training$classe ~ ., method="rf", data=training)
+```
+
+### Step 5
+Evaluate the in-sample error.<br>
+<strong>Result:</strong> 100% accuracy!  Uh-oh, could we be overfitting?
+```{r step5, eval=FALSE, prompt=TRUE}
+trainingPredictions <- predict(modelFit, newdata=training)
+confusionMatrix(training$classe, trainingPredictions)
+```
+```{r step5results, eval=FALSE}
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 4185    0    0    0    0
+         B    0 2848    0    0    0
+         C    0    0 2567    0    0
+         D    0    0    0 2412    0
+         E    0    0    0    0 2706
+
+Overall Statistics
+                                     
+               Accuracy : 1          
+                 95% CI : (0.9997, 1)
+    No Information Rate : 0.2843     
+    P-Value [Acc > NIR] : < 2.2e-16  
+                                     
+                  Kappa : 1          
+ Mcnemar's Test P-Value : NA         
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            1.0000   1.0000   1.0000   1.0000   1.0000
+Specificity            1.0000   1.0000   1.0000   1.0000   1.0000
+Pos Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+Neg Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+Prevalence             0.2843   0.1935   0.1744   0.1639   0.1839
+Detection Rate         0.2843   0.1935   0.1744   0.1639   0.1839
+Detection Prevalence   0.2843   0.1935   0.1744   0.1639   0.1839
+Balanced Accuracy      1.0000   1.0000   1.0000   1.0000   1.0000
+```
+
+### Step 6
+Estimate the out-of-sample error using the cross-validation set.<br>
+<strong>Result:</strong> 99.51% accuracy.  Very nice - we are done.<br>
+As long as the 20 test cases are randomly drawn from a similar data set,
+then we have 90.64% chance of getting all 20 right.
+```{r step6, eval=FALSE, prompt=TRUE}
+testPredictions <- predict(modelFit, newdata=testing)
+confusionMatrix(testing$classe, testPredictions)
+```
+```{r step6results, eval=FALSE}
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 1394    1    0    0    0
+         B    5  943    1    0    0
+         C    0    4  848    3    0
+         D    0    0    7  797    0
+         E    0    0    1    2  898
+
+Overall Statistics
+                                          
+               Accuracy : 0.9951          
+                 95% CI : (0.9927, 0.9969)
+    No Information Rate : 0.2853          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9938          
+ Mcnemar's Test P-Value : NA              
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            0.9964   0.9947   0.9895   0.9938   1.0000
+Specificity            0.9997   0.9985   0.9983   0.9983   0.9993
+Pos Pred Value         0.9993   0.9937   0.9918   0.9913   0.9967
+Neg Pred Value         0.9986   0.9987   0.9978   0.9988   1.0000
+Prevalence             0.2853   0.1933   0.1748   0.1635   0.1831
+Detection Rate         0.2843   0.1923   0.1729   0.1625   0.1831
+Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
+Balanced Accuracy      0.9981   0.9966   0.9939   0.9960   0.9996
+```
