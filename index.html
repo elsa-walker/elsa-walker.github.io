@@ -272,7 +272,8 @@ Run this and take a nap.</p>
 <h3>Step 5</h3>
 
 <p>Evaluate the in-sample error.<br>
-<strong>Result:</strong> 100% accuracy!  Uh-oh, could we be overfitting?</p>
+<strong>Result:</strong> 100% accuracy!  Uh-oh, could we be overfitting?<br>
+Let&#39;s check the out-of-sample error in Step 6.</p>
 
 <pre><code class="r">&gt; trainingPredictions &lt;- predict(modelFit, newdata = training)
 &gt; confusionMatrix(training$classe, trainingPredictions)

@@ -74,7 +74,8 @@ modelFit <- train(training$classe ~ ., method="rf", data=training)
 
 ### Step 5
 Evaluate the in-sample error.<br>
-<strong>Result:</strong> 100% accuracy!  Uh-oh, could we be overfitting?
+<strong>Result:</strong> 100% accuracy!  Uh-oh, could we be overfitting?<br>
+Let's check the out-of-sample error in Step 6.
 ```{r step5, eval=FALSE, prompt=TRUE}
 trainingPredictions <- predict(modelFit, newdata=training)
 confusionMatrix(training$classe, trainingPredictions)
